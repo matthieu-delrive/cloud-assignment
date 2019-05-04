@@ -7,7 +7,7 @@
 </head>
 <body>
 <nav id="nav" class="navbar navbar-light bg-light">
-    <a class="navbar-brand" href="#">Dropbox</a>
+    <a class="navbar-brand" href="#">My Dropbox</a>
 
     <div class="float-right" id="navbarSupportedContent">
         {% if user %}
@@ -20,6 +20,7 @@
     <div class="row">
 
         {% if user %}
+            <h1 class="col-md-12 text-center">My Dropbox</h1>
             <p id="master-directory" class="d-none">{{ directory_id }}</p>
             <div class="col-md-12 my-3">
                 <label for="new-name-directory" class="mr-1">name directory</label><input id="new-name-directory" type="text"/>
@@ -31,7 +32,7 @@
                 <button id="add-file" class="">add file</button>
             </div>
             {#    </form>#}
-            <p name={{ directory.name }} id="actual-directory">actual directory : {{ directory.name }}</p>
+            <p name={{ directory.name }} id="actual-directory">actual directory : /</p>
             <table id="table" class="table table-bordered">
                 <thead>
                 <tr>
@@ -48,7 +49,7 @@
 
 
 
-        {% else %}<p>Hello guest welcome to the application</p>
+        {% else %}<h1 class="col-md-12 text-center">Please login to access to the platform</h1>
         {% endif %}
     </div>
 </div>
@@ -144,7 +145,7 @@
             let addDirectory = document.getElementById("add-directory");
 
             if (name === "../") name = "/";
-            actualDirectory.innerText = "actual directory " + name;
+            actualDirectory.innerText = "actual directory : " + name;
             addDirectory.setAttribute('_id', id);
             table.innerHTML = "";
             tableFile.innerHTML = "";
