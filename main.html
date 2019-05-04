@@ -1,0 +1,237 @@
+<html>
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <meta charset="utf-8"/>
+    <title>Building Dropbox with Google App Engine</title>
+</head>
+<body>
+<nav id="nav" class="navbar navbar-light bg-light">
+    <a class="navbar-brand" href="#">Dropbox</a>
+
+    <div class="float-right" id="navbarSupportedContent">
+        {% if user %}
+            <p class="d-inline mr-2">{{ user.email() }}</p>
+        {% endif %}
+        <a class="" href={{ url }}>{{ url_string }}</a>
+    </div>
+</nav>
+<div id="form" class="container mt-3">
+    <div class="row">
+
+        {% if user %}
+            <p id="master-directory" class="d-none">{{ directory_id }}</p>
+            <div class="col-md-12 my-3">
+                <label for="new-name-directory" class="mr-1">name directory</label><input id="new-name-directory" type="text"/>
+                <button id="add-directory" _id={{ directory_id }}>add directory</button>
+            </div>
+            <div class="col-md-12 my-3">
+                <label for="file-upload"  class="mr-1">file</label>
+                <input type="file" name="file"/>
+                <button id="add-file" class="">add file</button>
+            </div>
+            {#    </form>#}
+            <p name={{ directory.name }} id="actual-directory">actual directory : {{ directory.name }}</p>
+            <table id="table" class="table table-bordered">
+                <thead>
+                <tr>
+                    <th scope="col">name</th>
+                    <th scope="col">go to</th>
+                    <th scope="col">delete</th>
+                </tr>
+                </thead>
+                <tbody id="tbody">
+                </tbody>
+                <tbody id="tbody-file">
+                </tbody>
+            </table>
+
+
+
+        {% else %}<p>Hello guest welcome to the application</p>
+        {% endif %}
+    </div>
+</div>
+<!-- Footer -->
+<footer class="page-footer font-small fixed-bottom" style="background-color: #2196f3 !important;">
+
+    <!-- Copyright -->
+    <div class="text-center py-3 text-white">
+        Matthieu DELRIVE 2981443 assignment cloud
+    </div>
+    <!-- Copyright -->
+
+</footer>
+<!-- Footer -->
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+<script>
+
+
+    function push_form() {
+        let formdata = new FormData();
+        if (!document.querySelector('input[type=file]').files[0]) {
+            const div = document.getElementById('nav');
+
+            const alert_failed = document.createElement('div');
+            alert_failed.innerHTML = '<div class="alert alert-danger" role="alert">no file</div>';
+            div.parentNode.insertBefore(alert_failed, div.nextSibling);
+            setTimeout(function () {
+                alert_failed.remove()
+            }, 3000);
+
+            return;
+        }
+
+        let parentDirectory = document.getElementById('add-directory').getAttribute('_id');
+        let file = document.querySelector('input[type=file]').files[0];
+        formdata.append('file', file, file.fileName);
+        formdata.append('id', parentDirectory);
+        axios.get("/gen-file").then(function (data) {
+
+            axios.post(data.data, formdata, {
+                withCredentials: true,
+                headers: {
+                    'Content-Disposition': 'form-data',
+                    'Content-Type': `multipart/form-data; boundary=${formdata._boundary}`,
+                }
+            }).then((response) => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = addNewEntriesFiles(response.data[0]._id, response.data[0].name, response.data[0].size, response.data[0].typefile, response.data[0].creationdate);
+                tr.setAttribute('_id', response.data[0]._id);
+                tableFile.appendChild(tr);
+            }).catch((error) => {
+                const div = document.getElementById('form');
+                const alert_failed = document.createElement('div');
+                alert_failed.innerHTML = '<div class="alert alert-danger" role="alert">' + error + '</div>';
+                div.parentNode.insertBefore(alert_failed, div.nextSibling);
+                setTimeout(function () {
+                    alert_failed.remove()
+                }, 3000);
+            })
+        });
+    }
+
+    function deleteFile(id) {
+        let i = "#tbody-file tr[_id=\"" + id.toString() + "\"]";
+        const url = "/delete-file?id=" + id;
+        axios.get(url).then(function () {
+            tableFile.removeChild(document.querySelector(i));
+        });
+    }
+
+    function addNewEntries(id, name) {
+        if (masterDirectory !== id.toString()) {
+            return "<td>" + name + "</td><td><button onclick=goToDirectory(" + id + ",\"" + name + "\") class=\"btn btn-primary go_to\">go to</button></td><td><button onclick=deleteDirectory(" + id + ") class=\"btn btn-primary go_to\">delete</button></td>";
+        }
+        return "<td>" + name + "</td><td><button onclick=goToDirectory(" + id + ",\"" + name + "\") class=\"btn btn-primary go_to\">go to</button></td><td></td>";
+
+    }
+
+    function addNewEntriesFiles(id, name, size, type, creation) {
+        return "<td><p>" + name + "</p><p>size " + size + "b</p><p>type " + type + "</p><p>date "+ creation +"</p></td><td><a name=ml target=_blank href=/download?id=" + id + " class=\"btn btn-primary go_to\" download>download</button></td><td><button onclick=deleteFile(" + id + ") class=\"btn btn-primary go_to\">delete file</button></td>";
+
+    }
+
+    const addFile = document.getElementById('add-file');
+    addFile.addEventListener('click', push_form);
+    const masterDirectory = document.getElementById('master-directory').innerText;
+    let actualDirectory = document.getElementById('actual-directory');
+
+    function goToDirectory(id, name) {
+        let url = '/directory' + '?id=' + id;
+        axios.get(url).then(function (payload) {
+            let addDirectory = document.getElementById("add-directory");
+
+            if (name === "../") name = "/";
+            actualDirectory.innerText = "actual directory " + name;
+            addDirectory.setAttribute('_id', id);
+            table.innerHTML = "";
+            tableFile.innerHTML = "";
+            let prev = document.createElement('tr');
+            if (id.toString() !== masterDirectory) {
+                prev.setAttribute('_id', addDirectory.getAttribute('_id'));
+                prev.innerHTML = addNewEntries(masterDirectory, "../");
+                table.appendChild(prev)
+            }
+            for (let i = 0; i < payload.data.length; i++) {
+                let tr = document.createElement('tr');
+                tr.innerHTML = addNewEntries(payload.data[i].id, payload.data[i].name);
+                tr.setAttribute('_id', payload.data[i].id);
+                table.appendChild(tr);
+            }
+            fillTableWithFiles();
+        })
+    }
+
+    function deleteDirectory(id) {
+        let i = "#table tr[_id=\"" + id.toString() + "\"]";
+        let url = '/delete-directory' + '?id=' + id;
+        axios.get(url).then(function (payload) {
+            table.removeChild(document.querySelector(i));
+        })
+    }
+
+    function fillTableWithFiles() {
+        let addDirectory = document.getElementById("add-directory");
+        url = '/get-files' + '?id=' + addDirectory.getAttribute('_id');
+        axios.get(url).then(function (payload) {
+            for (let i = 0; i < payload.data.length; i++) {
+                let tr = document.createElement('tr');
+                tr.innerHTML = addNewEntriesFiles(payload.data[i].id, payload.data[i].name, payload.data[i].size, payload.data[i].typefile, payload.data[i].creationdate);
+                tr.setAttribute('_id', payload.data[i].id);
+                tr.setAttribute('id', payload.data[i].id+payload.data[i].name);
+                tableFile.appendChild(tr);
+            }
+        })
+    }
+
+    function fillTable() {
+        let addDirectory = document.getElementById("add-directory");
+        let url = '/directory' + '?id=' + addDirectory.getAttribute('_id');
+        axios.get(url).then(function (payload) {
+            for (let i = 0; i < payload.data.length; i++) {
+                let tr = document.createElement('tr');
+                tr.innerHTML = addNewEntries(payload.data[i].id, payload.data[i].name);
+                tr.setAttribute('_id', payload.data[i].id);
+                table.appendChild(tr);
+            }
+        });
+    }
+
+    const table = document.getElementById("tbody");
+    const tableFile = document.getElementById("tbody-file");
+    fillTable();
+    fillTableWithFiles();
+
+    function addDirectoryHandler() {
+        let addDirectory = document.getElementById("add-directory");
+
+        let parentDirectory = addDirectory.getAttribute('_id');
+        let name = document.getElementById('new-name-directory').value.replace(/<(?:.|\n)*?>/gm, '').trim();
+        if (name === "" || name === null)
+            return;
+        axios.post('/directory', {
+            parent_id: parentDirectory,
+            name: name
+        }).then(function (payload) {
+            let tr = document.createElement('tr');
+            tr.innerHTML = addNewEntries(payload.data[0]._id, payload.data[0].name);
+            tr.setAttribute('_id', payload.data[0]._id);
+            table.appendChild(tr);
+        }).catch(function (error) {
+                      const div = document.getElementById('nav');
+
+            const alert_failed = document.createElement('div');
+            alert_failed.innerHTML = '<div class="alert alert-danger" role="alert">directory with the same name already exist</div>';
+            div.parentNode.insertBefore(alert_failed, div.nextSibling);
+            setTimeout(function () {
+                alert_failed.remove()
+            }, 3000);
+
+        })
+    }
+
+    document.getElementById("add-directory").addEventListener('click', addDirectoryHandler)
+</script>
+</html>
