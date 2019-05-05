@@ -8,6 +8,7 @@ from models.directories import Directories
 
 
 class Directory(webapp2.RequestHandler):
+    # get all directory in the parent directory
     def get(self):
         self.response.headers['Content-Type'] = 'text/json'
         user = users.get_current_user()
@@ -29,6 +30,7 @@ class Directory(webapp2.RequestHandler):
             self.response.set_status(403)
             self.response.write(json.dumps({"error": "cannot fetch data"}))
 
+    # create directory if user connected and can create the directory
     def post(self):
         body = json.loads(self.request.body)
         user = users.get_current_user()

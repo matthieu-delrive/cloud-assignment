@@ -3,6 +3,7 @@ from google.appengine.ext import ndb
 from models import directories
 
 
+# file model
 class Files(ndb.Model):
     # email address of this user
     directory = ndb.KeyProperty(kind="Directories")

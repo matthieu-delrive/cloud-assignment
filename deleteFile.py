@@ -8,6 +8,7 @@ from models.directories import Directories
 
 
 class DeleteFile(webapp2.RequestHandler):
+    # deletefile by id
     def get(self):
         self.response.headers['Content-Type'] = 'text/json'
         user = users.get_current_user()

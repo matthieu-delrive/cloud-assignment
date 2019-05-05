@@ -8,6 +8,7 @@ from models.files import Files
 
 
 class GetFile(webapp2.RequestHandler):
+    # send a list of file in the directory
     def get(self):
         self.response.headers['Content-Type'] = 'text/json'
         user = users.get_current_user()

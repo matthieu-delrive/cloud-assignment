@@ -1,6 +1,7 @@
 from google.appengine.ext import ndb
 
 
+# directory model
 class Directories(ndb.Model):
     # email address of this user
 

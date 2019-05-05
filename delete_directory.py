@@ -10,6 +10,7 @@ from models.directories import Directories
 
 
 class DeleteDirectory(webapp2.RequestHandler):
+    # delete directory by id
     def get(self):
         self.response.headers['Content-Type'] = 'text/json'
         user = users.get_current_user()

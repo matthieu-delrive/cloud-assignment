@@ -20,6 +20,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.di
 
 
 class MainPage(webapp2.RequestHandler):
+    # send index page and create url to login/logout
     def get(self):
         global myuser
         self.response.headers['Content-Type'] = 'text/html'
